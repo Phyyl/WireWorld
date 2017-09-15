@@ -18,6 +18,9 @@ namespace WireWorld
         private int updateSpeed = 1;
         private bool paused;
         private bool forceUpdate;
+        
+        public int MouseX => Mouse.X / scale;
+        public int MouseY => Mouse.Y / scale;
 
         public Game() : base(800, 600)
         {
@@ -76,6 +79,17 @@ namespace WireWorld
             {
                 forceUpdate = true;
             }
+            else if (e.Key == Key.P)
+            {
+                Grid grid = new Grid(10, 10);
+
+                grid[0, 0] = 1;
+                grid[1, 1] = 1;
+                grid[2, 2] = 1;
+                grid[3, 3] = 1;
+
+                instance.Paste(grid, 10, 10);
+            }
         }
 
         private void HandleMouseEvent(MouseEventArgs e)
@@ -87,10 +101,7 @@ namespace WireWorld
 
             byte value = (byte)(e.Mouse.LeftButton == ButtonState.Pressed ? 1 : (e.Mouse.MiddleButton == ButtonState.Pressed ? 2 : 0));
 
-            int x = e.Position.X / scale;
-            int y = e.Position.Y / scale;
-
-            instance[x, y] = value;
+            instance[MouseX, MouseY] = value;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)

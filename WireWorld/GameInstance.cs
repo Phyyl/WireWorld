@@ -8,35 +8,27 @@ namespace WireWorld
 {
     public class GameInstance
     {
-        private byte[,] currentData;
-        private byte[,] nextData;
+        private Grid current;
+        private Grid next;
 
-        public int Width { get; }
-        public int Height { get; }
-
-        public GameInstance(int width, int height)
-        {
-            currentData = new byte[width, height];
-            nextData = new byte[width, height];
-
-            Width = width;
-            Height = height;
-        }
+        public int Width => current.Width;
+        public int Height => current.Height;
 
         public byte this[int x, int y]
         {
-            get => IsValidPosition(x, y) ? currentData[x, y] : default;
-            set
-            {
-                if (IsValidPosition(x, y)) currentData[x, y] = value;
-            }
+            get => current[x, y];
+            set => current[x, y] = value;
         }
 
-        public bool IsValidPosition(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
+        public GameInstance(int width, int height)
+        {
+            current = new Grid(width, height);
+            next = new Grid(width, height);
+        }
 
         private byte GetNextValue(int x, int y)
         {
-            byte value = this[x, y];
+            byte value = current[x, y];
 
             if (value == 0) return 0;
             if (value == 2) return 3;
@@ -47,7 +39,7 @@ namespace WireWorld
                 return 4;
             }
 
-            int GetIsHead(int xx, int yy) => this[xx, yy] == 2 ? 1 : 0;
+            int GetIsHead(int xx, int yy) => current[xx, yy] == 2 ? 1 : 0;
 
             int n =
                 GetIsHead(x - 1, y - 1) +
@@ -69,19 +61,24 @@ namespace WireWorld
 
         private void UpdateCell(int x, int y)
         {
-            nextData[x, y] = GetNextValue(x, y);
+            next[x, y] = GetNextValue(x, y);
         }
 
         public void Iterate()
         {
-            Parallel.For(0, nextData.Length, i =>
+            Parallel.For(0, next.Length, i =>
             {
                 int x = i % Width;
                 int y = i / Width;
                 UpdateCell(x, y);
             });
 
-            Array.Copy(nextData, currentData, currentData.Length);
+            next.CopyTo(current);
+        }
+
+        public void Paste(Grid grid, int x, int y)
+        {
+            current.Merge(grid, x, y);
         }
     }
 }
