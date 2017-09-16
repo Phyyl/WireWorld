@@ -17,7 +17,7 @@ namespace WireWorld
 
         public byte this[int x, int y]
         {
-            get => IsValidPosition(x, y) ? data[x, y] : default;
+            get => IsValidPosition(x, y) ? data[x, y] : (byte)0;
             set
             {
                 if (IsValidPosition(x, y)) data[x, y] = value;
