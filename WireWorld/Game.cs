@@ -18,14 +18,14 @@ namespace WireWorld
         private int updateSpeed = 1;
         private bool paused;
         private bool forceUpdate;
-        
+
         public int MouseX => Mouse.X / scale;
         public int MouseY => Mouse.Y / scale;
 
         public Game() : base(800, 600)
         {
             instance = new GameInstance(400, 200);
-            
+
             UpdateTitle();
         }
 
@@ -41,7 +41,7 @@ namespace WireWorld
             GL.LoadMatrix(ref projectionMatrix);
             GL.MatrixMode(MatrixMode.Modelview);
         }
-        
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
@@ -94,13 +94,13 @@ namespace WireWorld
 
         private void HandleMouseEvent(MouseEventArgs e)
         {
-            if (!e.Mouse.IsAnyButtonDown)
-            {
-                return;
-            }
+            byte value = 0;
 
-            byte value = (byte)(e.Mouse.LeftButton == ButtonState.Pressed ? 1 : (e.Mouse.MiddleButton == ButtonState.Pressed ? 2 : 0));
-
+            if (e.Mouse.LeftButton == ButtonState.Pressed) value = 1;
+            else if (e.Mouse.RightButton == ButtonState.Pressed) value = 0;
+            else if (e.Mouse.MiddleButton == ButtonState.Pressed) value = 2;
+            else return;
+            
             instance[MouseX, MouseY] = value;
         }
 
