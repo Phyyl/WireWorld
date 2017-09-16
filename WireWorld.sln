@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WireWorld", "WireWorld\WireWorld.csproj", "{6DDF546D-CFF5-47D2-AE76-C341EE8EB9E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WireWorld", "WireWorld\WireWorld.csproj", "{839286D3-85E8-45FE-BD42-32B88C12D8B7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6DDF546D-CFF5-47D2-AE76-C341EE8EB9E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6DDF546D-CFF5-47D2-AE76-C341EE8EB9E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6DDF546D-CFF5-47D2-AE76-C341EE8EB9E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6DDF546D-CFF5-47D2-AE76-C341EE8EB9E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{839286D3-85E8-45FE-BD42-32B88C12D8B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{839286D3-85E8-45FE-BD42-32B88C12D8B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{839286D3-85E8-45FE-BD42-32B88C12D8B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{839286D3-85E8-45FE-BD42-32B88C12D8B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {6B6E84C8-3EFA-402A-A64A-A369073B598F}
+		SolutionGuid = {DC8FF83F-720F-4C13-85F4-44F26885CFA5}
 	EndGlobalSection
 EndGlobal
