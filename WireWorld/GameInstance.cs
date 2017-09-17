@@ -18,14 +18,11 @@ namespace WireWorld
             : base(1024, 768, CreateGraphicsMode())
         {
             game = new Game(path);
+			game.CreateNewMap(400, 400);
 
 			if (path != null)
 			{
 				game.Load();
-			}
-			else
-			{
-				game.CreateNewMap(400, 400);
 			}
         }
 

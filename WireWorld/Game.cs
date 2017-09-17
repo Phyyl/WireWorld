@@ -40,7 +40,7 @@ namespace WireWorld
 
 		private bool ShouldUpdate => ForceUpdate || (!Paused && (update % MathHelper.Clamp(Math.Pow(2, 6 - updateSpeed), 1, 60) == 0));
 
-		public void CreateNewMap(int width, int height, bool confirmSave = false)
+		public void CreateNewMap(int width, int height)
 		{
 			Map = new Map(width, height);
 		}
