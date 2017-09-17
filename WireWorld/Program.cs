@@ -16,7 +16,10 @@ namespace WireWorld
             Console.WriteLine("  Space: Toggle pause");
             Console.WriteLine("  Up: Increase update speed");
             Console.WriteLine("  Down: Decrease update speed");
-            Console.WriteLine();
+			Console.WriteLine("  Shift+Drag: Draw line");
+			Console.WriteLine("  Ctrl+Shift+Drag: Draw rectangle");
+			Console.WriteLine("  Ctrl+Drag: Select clipboard");
+			Console.WriteLine();
 
             Console.WriteLine("Mouse");
             Console.WriteLine("  Left: Copper");

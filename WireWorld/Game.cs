@@ -4,6 +4,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace WireWorld
 	{
 		public Map Map { get; private set; }
 
+		private string path;
 		private int update = 0;
 		private int updateSpeed = 4;
 		private float scale = 10;
@@ -41,6 +43,11 @@ namespace WireWorld
 		public void CreateNewMap(int width, int height, bool confirmSave = false)
 		{
 			Map = new Map(width, height);
+		}
+
+		public Game(string path = null)
+		{
+			this.path = path;
 		}
 
 		public void Update(object delta)
@@ -79,6 +86,11 @@ namespace WireWorld
 			if (InputManager.IsKeyPressed(Key.Tab))
 			{
 				ForceUpdate = true;
+			}
+
+			if (InputManager.IsKeyPressed(Key.Escape))
+			{
+				clipboard = null;
 			}
 		}
 
@@ -152,7 +164,7 @@ namespace WireWorld
 				{
 					if (InputManager.IsMouseButtonPressed(MouseButton.Left))
 					{
-						Map.Paste(clipboard, MousePoint.X, MousePoint.Y, merge: true);
+						DrawClipboard(MousePoint.X, MousePoint.Y);
 					}
 				}
 				else
@@ -180,15 +192,20 @@ namespace WireWorld
 			}
 		}
 
+		private void DrawClipboard(int x, int y)
+		{
+			Map.Paste(clipboard, x, y, merge: true);
+		}
+
 		private void DrawLine(Point start, Point end, Tile tile)
 		{
-			if (start == end)
+			foreach (var point in Bresenham.GetPointsOnLine(start.X, start.Y, end.X, end.Y))
 			{
-				Map[start.X, start.Y] = tile;
-			}
-			else
-			{
-				foreach (var point in Bresenham.GetPointsOnLine(start.X, start.Y, end.X, end.Y))
+				if (clipboard != null)
+				{
+					DrawClipboard(point.X, point.Y);
+				}
+				else
 				{
 					Map[point.X, point.Y] = tile;
 				}
@@ -203,11 +220,18 @@ namespace WireWorld
 			{
 				for (int y = 0; y < selection.Height; y++)
 				{
-					Map[x + selection.X, y + selection.Y] = tile;
+					if (clipboard != null)
+					{
+						DrawClipboard(x + selection.X, y + selection.Y);
+					}
+					else
+					{
+						Map[x + selection.X, y + selection.Y] = tile;
+					}
 				}
 			}
 		}
-
+		
 		private void RenderMap()
 		{
 			GL.LoadIdentity();
@@ -227,7 +251,7 @@ namespace WireWorld
 					RenderRectangle();
 					break;
 				case MouseMode.Points:
-					RenderClipboard();
+					RenderClipboard(MousePoint.X, MousePoint.Y);
 					break;
 			}
 		}
@@ -236,16 +260,23 @@ namespace WireWorld
 		{
 			foreach (var point in Bresenham.GetPointsOnLine(startPoint.X, startPoint.Y, MousePoint.X, MousePoint.Y))
 			{
-				TileType.Copper.Render(Tile.Copper, point.X, point.Y, 0.5f);
+				if (clipboard != null)
+				{
+					RenderClipboard(point.X, point.Y);
+				}
+				else
+				{
+					TileType.Copper.Render(Tile.Copper, point.X, point.Y, 0.5f);
+				}
 			}
 		}
 
-		private void RenderClipboard()
+		private void RenderClipboard(int x, int y)
 		{
 			if (clipboard != null)
 			{
 				GL.PushMatrix();
-				GL.Translate(MousePoint.X, MousePoint.Y, 0);
+				GL.Translate(x, y, 0);
 				clipboard.Render();
 				GL.PopMatrix();
 			}
@@ -255,26 +286,54 @@ namespace WireWorld
 		{
 			Rectangle selection = SelectionRectangle;
 
-			GL.Begin(PrimitiveType.Quads);
+			if (clipboard != null)
+			{
+				for (int x = 0; x < selection.Width; x++)
+				{
+					for (int y = 0; y < selection.Height; y++)
+					{
+						RenderClipboard(x + selection.X, y + selection.Y);
+					}
+				}
+			}
+			else
+			{
+				GL.Begin(PrimitiveType.Quads);
 
-			GL.Color4(Color4.White.ChangeAlpha(0.5f));
+				GL.Color4(Color4.White.ChangeAlpha(0.5f));
 
-			GL.Vertex2(selection.Left, selection.Top);
-			GL.Vertex2(selection.Left, selection.Bottom);
-			GL.Vertex2(selection.Right, selection.Bottom);
-			GL.Vertex2(selection.Right, selection.Top);
+				GL.Vertex2(selection.Left, selection.Top);
+				GL.Vertex2(selection.Left, selection.Bottom);
+				GL.Vertex2(selection.Right, selection.Bottom);
+				GL.Vertex2(selection.Right, selection.Top);
 
-			GL.End();
+				GL.End();
+			}
 		}
 
 		public void LoadGame()
 		{
-			//TODO: Load map from file, if path is null, show open file window (*.wire)
+			if (path != null)
+			{
+				Map.Load(path);
+			}
 		}
 
 		public void SaveGame()
 		{
-			//TODO: Save map to file, if path is null, show save file window (*.wire)
+			if (path != null)
+			{
+				Map.Save(path);
+			}
+
+			for (int i = 0; i < 1000; i++)
+			{
+				if (!File.Exists($"map{i}.wire"))
+				{
+					Map.Save($"map{i}.wire");
+					break;
+				}
+			}
 		}
 	}
 }

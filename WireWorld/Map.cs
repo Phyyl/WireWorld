@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,11 @@ namespace WireWorld
 		public int Height => current.Height;
 
 		public Map(int width, int height)
+		{
+			InitSize(width, height);
+		}
+
+		private void InitSize(int width, int height)
 		{
 			current = new Grid(width, height);
 			next = new Grid(width, height);
@@ -67,6 +73,69 @@ namespace WireWorld
 		public void Render()
 		{
 			current.Render();
+		}
+
+		//TODO: Add tile type dictionary serialization
+
+		public void Save(string path)
+		{
+			try
+			{
+				using (FileStream fs = File.OpenWrite(path))
+				{
+					using (BinaryWriter writer = new BinaryWriter(fs))
+					{
+						writer.Write(Width);
+						writer.Write(Height);
+
+						for (int x = 0; x < Width; x++)
+						{
+							for (int y = 0; y < Height; y++)
+							{
+								Tile tile = this[x, y];
+
+								writer.Write(tile.ID);
+								writer.Write(tile.Data);
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				Console.WriteLine(ex.StackTrace);
+			}
+		}
+
+		public void Load(string path)
+		{
+			try
+			{
+				using (FileStream fs = File.OpenRead(path))
+				{
+					using (BinaryReader reader = new BinaryReader(fs))
+					{
+						int width = reader.ReadInt32();
+						int height = reader.ReadInt32();
+
+						InitSize(width, height);
+
+						for (int x = 0; x < width; x++)
+						{
+							for (int y = 0; y < height; y++)
+							{
+								this[x, y] = new Tile(reader.ReadByte(), reader.ReadByte());
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				Console.WriteLine(ex.StackTrace);
+			}
 		}
 	}
 }
