@@ -61,11 +61,11 @@ namespace WireWorld
 
 			if (InputManager.Modifiers == KeyModifiers.Control && InputManager.IsKeyPressed(Key.S))
 			{
-				SaveGame();
+				Save();
 			}
 			else if (InputManager.Modifiers == KeyModifiers.Control && InputManager.IsKeyPressed(Key.O))
 			{
-				LoadGame();
+				Load();
 			}
 
 			if (InputManager.IsKeyPressed(Key.Up))
@@ -107,9 +107,8 @@ namespace WireWorld
 			switch (InputManager.Modifiers)
 			{
 				case KeyModifiers.Shift: return MouseMode.Line;
-				case KeyModifiers.Shift | KeyModifiers.Control: return MouseMode.Rectangle;
-				case KeyModifiers.Control: return MouseMode.Select;
-				case KeyModifiers.Alt: return MouseMode.Paste;
+				case KeyModifiers.Control: return MouseMode.Rectangle;
+				case KeyModifiers.Alt: return MouseMode.Select;
 				default: return MouseMode.Points;
 			}
 		}
@@ -311,7 +310,7 @@ namespace WireWorld
 			}
 		}
 
-		public void LoadGame()
+		public void Load()
 		{
 			if (path != null)
 			{
@@ -319,7 +318,7 @@ namespace WireWorld
 			}
 		}
 
-		public void SaveGame()
+		public void Save()
 		{
 			if (path != null)
 			{

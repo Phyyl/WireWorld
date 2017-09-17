@@ -9,7 +9,6 @@ namespace WireWorld
 		Points,
 		Line,
 		Rectangle,
-		Select,
-		Paste
+		Select
 	}
 }

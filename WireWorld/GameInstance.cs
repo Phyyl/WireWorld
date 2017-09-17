@@ -14,12 +14,19 @@ namespace WireWorld
     {
         private Game game;
 
-        public GameInstance()
+        public GameInstance(string path = null)
             : base(1024, 768, CreateGraphicsMode())
         {
-            game = new Game();
+            game = new Game(path);
 
-            game.CreateNewMap(400, 400);
+			if (path != null)
+			{
+				game.Load();
+			}
+			else
+			{
+				game.CreateNewMap(400, 400);
+			}
         }
 
         private static GraphicsMode CreateGraphicsMode()
