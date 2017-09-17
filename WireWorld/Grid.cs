@@ -1,4 +1,7 @@
-﻿using System;
+﻿using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,50 +11,86 @@ namespace WireWorld
 {
     public class Grid
     {
-        private byte[,] data;
-
+        public Tile[,] Tiles { get; }
         public int Width { get; }
         public int Height { get; }
 
-        public int Length => data.Length;
-
-        public byte this[int x, int y]
-        {
-            get => IsValidPosition(x, y) ? data[x, y] : (byte)0;
-            set
-            {
-                if (IsValidPosition(x, y)) data[x, y] = value;
-            }
-        }
+        public int Length => Tiles.Length;
+        public Rectangle Bounds => new Rectangle(0, 0, Width, Height);
 
         public Grid(int width, int height)
         {
-            data = new byte[width, height];
+            Tiles = new Tile[width, height];
 
             Width = width;
             Height = height;
         }
 
-        public void Merge(Grid grid, int destX, int destY, int sourceX, int sourceY, int width, int height)
+        public Tile this[int x, int y]
         {
-            for (int x = 0; x < width; x++)
+            get => IsValidPosition(x, y) ? Tiles[x, y] : Tile.Void;
+            set
             {
-                for (int y = 0; y < height; y++)
+                if (IsValidPosition(x, y)) Tiles[x, y] = value;
+            }
+        }
+
+        public void Paste(Grid grid, int x = 0, int y = 0, Rectangle? sourceRect = null, bool merge = false)
+        {
+            Rectangle finalSourceRect = sourceRect ?? grid.Bounds;
+
+            for (int xx = 0; xx < finalSourceRect.Width; xx++)
+            {
+                for (int yy = 0; yy < finalSourceRect.Height; yy++)
                 {
-                    this[destX + x, destY + y] = grid[sourceX + x, sourceY + y];
+                    Tile value = this[x + xx, y + yy];
+
+                    if (!merge || value.ID == 0)
+                    {
+                        this[x + xx, y + yy] = grid[x + finalSourceRect.X, y + finalSourceRect.Y];
+                    }
                 }
             }
         }
 
-        public void Merge(Grid grid, int destX, int destY, int sourceX, int sourceY) => Merge(grid, destX, destY, sourceX, sourceY, grid.Width, grid.Height);
+        public IEnumerable<Tile> GetNeighbors(int x, int y)
+        {
+            yield return this[x - 1, y - 1];
+            yield return this[x - 1, y];
+            yield return this[x - 1, y + 1];
+            yield return this[x, y - 1];
+            yield return this[x, y + 1];
+            yield return this[x + 1, y - 1];
+            yield return this[x + 1, y];
+            yield return this[x + 1, y + 1];
+        }
 
-        public void Merge(Grid grid, int destX, int destY) => Merge(grid, destX, destY, 0, 0, grid.Width, grid.Height);
+        public Grid CreateCopy(Rectangle? sourceRect = null)
+        {
+            Grid copy = new Grid(Width, Height);
+            copy.Paste(this, sourceRect: sourceRect);
+            return copy;
+        }
+
+		public void CopyTo(Grid grid)
+		{
+			Array.Copy(Tiles, grid.Tiles, Math.Min(Tiles.Length, grid.Tiles.Length));
+		}
 
         public bool IsValidPosition(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
 
-        public void CopyTo(Grid grid)
+        public void Render()
         {
-            Array.Copy(data, grid.data, Math.Min(data.Length, grid.data.Length));
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    Tile tile = this[x, y];
+                    TileType type = tile.ID;
+
+                    type?.Render(this, tile, x, y);
+                }
+            }
         }
     }
 }

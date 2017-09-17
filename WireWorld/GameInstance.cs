@@ -1,84 +1,77 @@
-﻿using System;
+﻿using OpenTK;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 
 namespace WireWorld
 {
-    public class GameInstance
+    public class GameInstance : GameWindow
     {
-        private Grid current;
-        private Grid next;
+        private Game game;
 
-        public int Width => current.Width;
-        public int Height => current.Height;
-
-        public byte this[int x, int y]
+        public GameInstance()
+            : base(1024, 768, CreateGraphicsMode())
         {
-            get => current[x, y];
-            set => current[x, y] = value;
+            game = new Game();
+
+            game.CreateNewMap(400, 400);
         }
 
-        public GameInstance(int width, int height)
+        private static GraphicsMode CreateGraphicsMode()
         {
-            current = new Grid(width, height);
-            next = new Grid(width, height);
+            GraphicsMode @default = GraphicsMode.Default;
+            return new GraphicsMode(@default.ColorFormat, 24, @default.Stencil, 8, @default.AccumulatorFormat, @default.Buffers, @default.Stereo);
         }
 
-        private byte GetNextValue(int x, int y)
+        protected override void OnLoad(EventArgs e)
         {
-            byte value = current[x, y];
+            base.OnLoad(e);
 
-            if (value == 0) return 0;
-            if (value == 2) return 3;
-            if (value == 3) return 1;
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
-            if (value != 1)
-            {
-                return 4;
-            }
-
-            int GetIsHead(int xx, int yy) => current[xx, yy] == 2 ? 1 : 0;
-
-            int n =
-                GetIsHead(x - 1, y - 1) +
-                GetIsHead(x - 1, y) +
-                GetIsHead(x - 1, y + 1) +
-                GetIsHead(x, y - 1) +
-                GetIsHead(x, y + 1) +
-                GetIsHead(x + 1, y - 1) +
-                GetIsHead(x + 1, y) +
-                GetIsHead(x + 1, y + 1);
-
-            if (n > 0 && n <= 2)
-            {
-                return 2;
-            }
-
-            return 1;
+            InputManager.Initialize(this);
         }
 
-        private void UpdateCell(int x, int y)
+        protected override void OnResize(EventArgs e)
         {
-            next[x, y] = GetNextValue(x, y);
+            base.OnResize(e);
+
+            Matrix4 projectionMatrix = Matrix4.CreateOrthographicOffCenter(0, ClientSize.Width, ClientSize.Height, 0, 1, -1);
+
+            GL.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.LoadMatrix(ref projectionMatrix);
+            GL.MatrixMode(MatrixMode.Modelview);
         }
 
-        public void Iterate()
+        protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            Parallel.For(0, next.Length, i =>
-            {
-                int x = i % Width;
-                int y = i / Width;
-                UpdateCell(x, y);
-            });
+            InputManager.BeginUpdate();
+            base.OnUpdateFrame(e);
+            
+            game.Update((float)e.Time);
 
-            next.CopyTo(current);
-        }
+            InputManager.EndUpdate();
 
-        public void Paste(Grid grid, int x, int y)
+			Title = $"WireWorld ({(game.Paused ? "Paused, " : "")}Update speed: {game.UpdateSpeed})";
+		}
+
+        protected override void OnRenderFrame(FrameEventArgs e)
         {
-            current.Merge(grid, x, y);
+            base.OnRenderFrame(e);
+
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            game.Render();
+
+            SwapBuffers();
         }
     }
 }

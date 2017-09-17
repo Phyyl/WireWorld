@@ -23,7 +23,7 @@ namespace WireWorld
             Console.WriteLine("  Right: Void");
             Console.WriteLine("  Middle: Head");
 
-            new Game().Run(60);
+            new GameInstance().Run(60);
         }
     }
 }
