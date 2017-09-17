@@ -5,40 +5,42 @@ namespace WireWorld
 {
 	public static partial class InputManager
 	{
-		private static MouseState currentState;
-		private static MouseState previousState;
+		private static MouseState currentMouseState;
+		private static MouseState previousMouseState;
 		private static int previousMouseScroll;
 
-		public static Vector2 Delta { get; private set; }
-		public static Vector2 Position => window.PointToClient(new Point(currentState.X, currentState.Y)).ToVector();
-		public static int Scroll => currentState.Wheel - previousMouseScroll;
+		public static Vector2 MousePositionDelta { get; private set; }
+		public static Vector2 MousePosition => window.PointToClient(new Point(currentMouseState.X, currentMouseState.Y)).ToVector();
+		public static Vector2 MousePreviousPosition => window.PointToClient(new Point(previousMouseState.X, previousMouseState.Y)).ToVector();
+
+		public static int MouseScroll => currentMouseState.Wheel - previousMouseScroll;
 		public static bool IsCaptured => !window.CursorVisible;
-		public static bool IsInsideWindow => window.ClientSize.ToRectangle().Contains(Position.ToPoint());
+		public static bool IsInsideWindow => window.ClientSize.ToRectangle().Contains(MousePosition.ToPoint());
 
 		private static void InitializeMouse()
 		{
-			previousState = currentState = Mouse.GetCursorState();
+			previousMouseState = currentMouseState = Mouse.GetCursorState();
 		}
 		
 		private static void BeginUpdateMouse()
 		{
-			previousState = currentState;
-			currentState = Mouse.GetCursorState();
+			previousMouseState = currentMouseState;
+			currentMouseState = Mouse.GetCursorState();
 
 			if (IsCaptured)
 			{
-				Delta = (Position - (window.ClientSize.ToVector() / 2).Floor());
+				MousePositionDelta = (MousePosition - (window.ClientSize.ToVector() / 2).Floor());
 				CenterMouse();
 			}
 			else
 			{
-				Delta = Vector2.Zero;
+				MousePositionDelta = Vector2.Zero;
 			}
 		}
 
 		private static void EndUpdateMouse()
 		{
-			previousMouseScroll = currentState.ScrollWheelValue;
+			previousMouseScroll = currentMouseState.ScrollWheelValue;
 		}
 
 		public static void CaptureMouse()
@@ -66,12 +68,12 @@ namespace WireWorld
 
 		public static bool IsMouseButtonDown(MouseButton button, bool ignoreWindowFocus = false)
 		{
-			return (ignoreWindowFocus || IsWindowFocused) && currentState.IsButtonDown(button) && IsInsideWindow;
+			return (ignoreWindowFocus || IsWindowFocused) && currentMouseState.IsButtonDown(button) && IsInsideWindow;
 		}
 
 		public static bool WasMouseButtonDown(MouseButton button, bool ignoreWindowFocus = false)
 		{
-			return (ignoreWindowFocus || IsWindowFocused) && previousState.IsButtonDown(button) && IsInsideWindow;
+			return (ignoreWindowFocus || IsWindowFocused) && previousMouseState.IsButtonDown(button) && IsInsideWindow;
 		}
 
 		public static bool IsMouseButtonPressed(MouseButton button, bool ignoreWindowFocus = false)

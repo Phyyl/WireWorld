@@ -14,7 +14,7 @@ namespace WireWorld
 		public Map Map { get; private set; }
 
 		private int update = 0;
-		private int updateSpeed = 6;
+		private int updateSpeed = 4;
 		private float scale = 10;
 		private Vector2 offset;
 
@@ -27,8 +27,12 @@ namespace WireWorld
 			set => updateSpeed = MathHelper.Clamp(value, 1, 6);
 		}
 
-		private int MouseX => (int)(InputManager.Position.X / scale);
-		private int MouseY => (int)(InputManager.Position.Y / scale);
+		private int MouseX => (int)(InputManager.MousePosition.X / scale);
+		private int MouseY => (int)(InputManager.MousePosition.Y / scale);
+		private int PreviousMouseX => (int)(InputManager.MousePreviousPosition.X / scale);
+		private int PreviousMouseY => (int)(InputManager.MousePreviousPosition.Y / scale);
+		private Point MousePoint => new Point(MouseX, MouseY);
+		private Point PreviousMousePoint => new Point(PreviousMouseX, PreviousMouseY);
 
 		private bool ShouldUpdate => ForceUpdate || (!Paused && (update % MathHelper.Clamp(Math.Pow(2, 6 - updateSpeed), 1, 60) == 0));
 
@@ -86,17 +90,46 @@ namespace WireWorld
 
 			if (InputManager.IsMouseButtonDown(MouseButton.Left))
 			{
-				Map[MouseX, MouseY] = Tile.Copper;
+				if (InputManager.WasMouseButtonDown(MouseButton.Left))
+				{
+					DrawLine(PreviousMousePoint, MousePoint, Tile.Copper);
+				}
+				else
+				{
+					DrawLine(MousePoint, MousePoint, Tile.Copper);
+				}
 			}
 			else if (InputManager.IsMouseButtonDown(MouseButton.Right))
 			{
-				Map[MouseX, MouseY] = Tile.Void;
+				if (InputManager.WasMouseButtonDown(MouseButton.Right))
+				{
+					DrawLine(PreviousMousePoint, MousePoint, Tile.Void);
+				}
+				else
+				{
+					DrawLine(MousePoint, MousePoint, Tile.Void);
+				}
 			}
-			else if (InputManager.IsMouseButtonDown(MouseButton.Middle))
+			else if (InputManager.IsMouseButtonPressed(MouseButton.Middle))
 			{
 				if (Map[MouseX, MouseY].ID == TileType.Copper.ID)
 				{
 					Map[MouseX, MouseY] = Tile.CopperHead;
+				}
+			}
+		}
+
+		private void DrawLine(Point start, Point end, Tile tile)
+		{
+			if (start == end)
+			{
+				Map[start.X, start.Y] = tile;
+			}
+			else
+			{
+				foreach (var point in Bresenham.GetPointsOnLine(start.X, start.Y, end.X, end.Y))
+				{
+					Map[point.X, point.Y] = tile;
 				}
 			}
 		}
