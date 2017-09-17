@@ -17,11 +17,26 @@ namespace WireWorld
 		public static bool IsCaptured => !window.CursorVisible;
 		public static bool IsInsideWindow => window.ClientSize.ToRectangle().Contains(MousePosition.ToPoint());
 
+		public static MouseButtons MouseButtons { get; private set; }
+
 		private static void InitializeMouse()
 		{
 			previousMouseState = currentMouseState = Mouse.GetCursorState();
+
+			window.MouseDown += Window_MouseDown;
+			window.MouseUp += Window_MouseUp;
 		}
-		
+
+		private static void Window_MouseUp(object sender, MouseButtonEventArgs e)
+		{
+			MouseButtons &= ~e.Button.ToMouseButtons();
+		}
+
+		private static void Window_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			MouseButtons |= e.Button.ToMouseButtons();
+		}
+
 		private static void BeginUpdateMouse()
 		{
 			previousMouseState = currentMouseState;

@@ -18,18 +18,18 @@ namespace WireWorld
 		public byte ID { get; internal set; }
 
 		public abstract void Update(Grid grid, ref Tile tile, int x, int y);
-		public abstract Color4 GetColor(Grid grid, Tile tile, int x, int y);
+		public abstract Color4 GetColor(Tile tile, int x, int y);
 
 		public TileType()
 		{
 			Register(this);
 		}
 
-		public virtual void Render(Grid grid, Tile tile, int x, int y)
+		public virtual void Render(Tile tile, int x, int y, float alpha = 1)
 		{
 			GL.Begin(PrimitiveType.Quads);
 
-			GL.Color4(GetColor(grid, tile, x, y));
+			GL.Color4(GetColor(tile, x, y).ChangeAlpha(alpha));
 
 			GL.Vertex2(x, y);
 			GL.Vertex2(x, y + 1);

@@ -11,40 +11,9 @@ namespace WireWorld
 	{
 		private Grid current;
 		private Grid next;
-		private int scale;
-		private int updateSpeed = 1;
-		private int update = 0;
-		private bool paused;
-		private bool forceUpdate;
 
 		public int Width => current.Width;
 		public int Height => current.Height;
-
-		public Grid Clipboard { get; set; }
-
-		public int Scale
-		{
-			get => scale;
-			set => scale = MathHelper.Clamp(value, 0, 20);
-		}
-
-		public int UpdateSpeed
-		{
-			get => updateSpeed;
-			set => updateSpeed = MathHelper.Clamp(value, 1, 6);
-		}
-
-		public bool Paused
-		{
-			get => paused;
-			set => paused = value;
-		}
-
-		public bool ForceUpdate
-		{
-			get => forceUpdate;
-			set => forceUpdate = value;
-		}
 
 		public Map(int width, int height)
 		{
@@ -54,7 +23,7 @@ namespace WireWorld
 
 		public Tile this[int x, int y]
 		{
-			get => next[x, y] = current[x, y];
+			get => current[x, y];
 			set => next[x, y] = current[x, y] = value;
 		}
 
@@ -87,6 +56,12 @@ namespace WireWorld
 		public void Paste(Grid grid, int x = 0, int y = 0, Rectangle? sourceRect = null, bool merge = false)
 		{
 			current.Paste(grid, x, y, sourceRect, merge);
+			next.Paste(grid, x, y, sourceRect, merge);
+		}
+
+		public Grid CreateCopy(Rectangle? sourceRect = null)
+		{
+			return next.CreateCopy(sourceRect);
 		}
 
 		public void Render()

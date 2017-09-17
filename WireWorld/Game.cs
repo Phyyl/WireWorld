@@ -1,4 +1,5 @@
 ﻿using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
@@ -17,6 +18,10 @@ namespace WireWorld
 		private int updateSpeed = 4;
 		private float scale = 10;
 		private Vector2 offset;
+		private MouseButtons downButton;
+		private MouseMode mouseMode;
+		private Point startPoint;
+		private Grid clipboard;
 
 		public bool Paused { get; set; }
 		public bool ForceUpdate { get; set; }
@@ -27,12 +32,9 @@ namespace WireWorld
 			set => updateSpeed = MathHelper.Clamp(value, 1, 6);
 		}
 
-		private int MouseX => (int)(InputManager.MousePosition.X / scale);
-		private int MouseY => (int)(InputManager.MousePosition.Y / scale);
-		private int PreviousMouseX => (int)(InputManager.MousePreviousPosition.X / scale);
-		private int PreviousMouseY => (int)(InputManager.MousePreviousPosition.Y / scale);
-		private Point MousePoint => new Point(MouseX, MouseY);
-		private Point PreviousMousePoint => new Point(PreviousMouseX, PreviousMouseY);
+		private Point MousePoint => new Point((int)(InputManager.MousePosition.X / scale), (int)(InputManager.MousePosition.Y / scale));
+		private Point PreviousMousePoint => new Point((int)(InputManager.MousePreviousPosition.X / scale), (int)(InputManager.MousePreviousPosition.Y / scale));
+		private Rectangle SelectionRectangle => Rectangle.FromLTRB(Math.Min(startPoint.X, MousePoint.X), Math.Min(startPoint.Y, MousePoint.Y), Math.Max(startPoint.X, MousePoint.X) + 1, Math.Max(startPoint.Y, MousePoint.Y) + 1);
 
 		private bool ShouldUpdate => ForceUpdate || (!Paused && (update % MathHelper.Clamp(Math.Pow(2, 6 - updateSpeed), 1, 60) == 0));
 
@@ -50,6 +52,15 @@ namespace WireWorld
 				UpdateMap();
 			}
 
+			if (InputManager.Modifiers == KeyModifiers.Control && InputManager.IsKeyPressed(Key.S))
+			{
+				SaveGame();
+			}
+			else if (InputManager.Modifiers == KeyModifiers.Control && InputManager.IsKeyPressed(Key.O))
+			{
+				LoadGame();
+			}
+
 			if (InputManager.IsKeyPressed(Key.Up))
 			{
 				UpdateSpeed++;
@@ -59,7 +70,7 @@ namespace WireWorld
 			{
 				UpdateSpeed--;
 			}
-			
+
 			if (InputManager.IsKeyPressed(Key.Space))
 			{
 				Paused = !Paused;
@@ -69,7 +80,6 @@ namespace WireWorld
 			{
 				ForceUpdate = true;
 			}
-			
 		}
 
 		public void Render()
@@ -77,6 +87,28 @@ namespace WireWorld
 			if (Map != null)
 			{
 				RenderMap();
+			}
+		}
+
+		private MouseMode GetMouseMode()
+		{
+			switch (InputManager.Modifiers)
+			{
+				case KeyModifiers.Shift: return MouseMode.Line;
+				case KeyModifiers.Shift | KeyModifiers.Control: return MouseMode.Rectangle;
+				case KeyModifiers.Control: return MouseMode.Select;
+				case KeyModifiers.Alt: return MouseMode.Paste;
+				default: return MouseMode.Points;
+			}
+		}
+
+		private Tile GetTileFromButtons(MouseButtons buttons)
+		{
+			switch (buttons)
+			{
+				case MouseButtons.Left: return Tile.Copper;
+				case MouseButtons.Middle: return Tile.CopperHead;
+				default: return Tile.Void;
 			}
 		}
 
@@ -88,33 +120,62 @@ namespace WireWorld
 				ForceUpdate = false;
 			}
 
-			if (InputManager.IsMouseButtonDown(MouseButton.Left))
+			if (downButton == MouseButtons.None && InputManager.MouseButtons != MouseButtons.None)
 			{
-				if (InputManager.WasMouseButtonDown(MouseButton.Left))
+				downButton = InputManager.MouseButtons;
+				startPoint = MousePoint;
+				mouseMode = GetMouseMode();
+			}
+
+			if (downButton != MouseButtons.None && InputManager.MouseButtons == MouseButtons.None)
+			{
+				switch (mouseMode)
 				{
-					DrawLine(PreviousMousePoint, MousePoint, Tile.Copper);
+					case MouseMode.Line:
+						DrawLine(startPoint, MousePoint, GetTileFromButtons(downButton));
+						break;
+					case MouseMode.Rectangle:
+						DrawRectangle(startPoint, MousePoint, GetTileFromButtons(downButton));
+						break;
+					case MouseMode.Select:
+						clipboard = SelectionRectangle.IsEmpty ? null : Map.CreateCopy(SelectionRectangle);
+						break;
+				}
+
+				downButton = MouseButtons.None;
+				mouseMode = MouseMode.Points;
+			}
+
+			if (mouseMode == MouseMode.Points)
+			{
+				if (clipboard != null)
+				{
+					if (InputManager.IsMouseButtonPressed(MouseButton.Left))
+					{
+						Map.Paste(clipboard, MousePoint.X, MousePoint.Y, merge: true);
+					}
 				}
 				else
 				{
-					DrawLine(MousePoint, MousePoint, Tile.Copper);
-				}
-			}
-			else if (InputManager.IsMouseButtonDown(MouseButton.Right))
-			{
-				if (InputManager.WasMouseButtonDown(MouseButton.Right))
-				{
-					DrawLine(PreviousMousePoint, MousePoint, Tile.Void);
-				}
-				else
-				{
-					DrawLine(MousePoint, MousePoint, Tile.Void);
-				}
-			}
-			else if (InputManager.IsMouseButtonPressed(MouseButton.Middle))
-			{
-				if (Map[MouseX, MouseY].ID == TileType.Copper.ID)
-				{
-					Map[MouseX, MouseY] = Tile.CopperHead;
+					switch (downButton)
+					{
+						case MouseButtons.None:
+							break;
+						case MouseButtons.Left:
+							DrawLine(PreviousMousePoint, MousePoint, Tile.Copper);
+							break;
+						case MouseButtons.Right:
+							DrawLine(PreviousMousePoint, MousePoint, Tile.Void);
+							break;
+						case MouseButtons.Middle:
+							if (InputManager.IsMouseButtonPressed(MouseButton.Middle))
+							{
+								Map[MousePoint.X, MousePoint.Y] = Tile.CopperHead;
+							}
+							break;
+						default:
+							break;
+					}
 				}
 			}
 		}
@@ -134,6 +195,19 @@ namespace WireWorld
 			}
 		}
 
+		private void DrawRectangle(Point start, Point end, Tile tile)
+		{
+			Rectangle selection = SelectionRectangle;
+
+			for (int x = 0; x < selection.Width; x++)
+			{
+				for (int y = 0; y < selection.Height; y++)
+				{
+					Map[x + selection.X, y + selection.Y] = tile;
+				}
+			}
+		}
+
 		private void RenderMap()
 		{
 			GL.LoadIdentity();
@@ -142,14 +216,63 @@ namespace WireWorld
 			GL.Translate(new Vector3(-offset));
 
 			Map.Render();
+
+			switch (mouseMode)
+			{
+				case MouseMode.Line:
+					RenderLine();
+					break;
+				case MouseMode.Rectangle:
+				case MouseMode.Select:
+					RenderRectangle();
+					break;
+				case MouseMode.Points:
+					RenderClipboard();
+					break;
+			}
 		}
 
-		public void LoadGame(string path)
+		private void RenderLine()
+		{
+			foreach (var point in Bresenham.GetPointsOnLine(startPoint.X, startPoint.Y, MousePoint.X, MousePoint.Y))
+			{
+				TileType.Copper.Render(Tile.Copper, point.X, point.Y, 0.5f);
+			}
+		}
+
+		private void RenderClipboard()
+		{
+			if (clipboard != null)
+			{
+				GL.PushMatrix();
+				GL.Translate(MousePoint.X, MousePoint.Y, 0);
+				clipboard.Render();
+				GL.PopMatrix();
+			}
+		}
+
+		private void RenderRectangle()
+		{
+			Rectangle selection = SelectionRectangle;
+
+			GL.Begin(PrimitiveType.Quads);
+
+			GL.Color4(Color4.White.ChangeAlpha(0.5f));
+
+			GL.Vertex2(selection.Left, selection.Top);
+			GL.Vertex2(selection.Left, selection.Bottom);
+			GL.Vertex2(selection.Right, selection.Bottom);
+			GL.Vertex2(selection.Right, selection.Top);
+
+			GL.End();
+		}
+
+		public void LoadGame()
 		{
 			//TODO: Load map from file, if path is null, show open file window (*.wire)
 		}
 
-		public void SaveGame(string path)
+		public void SaveGame()
 		{
 			//TODO: Save map to file, if path is null, show save file window (*.wire)
 		}

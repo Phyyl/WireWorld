@@ -8,14 +8,14 @@ namespace WireWorld
 	public static partial class InputManager
 	{
 		private static string text;
-		private static KeyboardState keyboardState;
-		private static KeyboardState previousKeyboardState;
 
-		internal static HashSet<Key> KeyDowns { get; private set; }
-		internal static HashSet<Key> KeyUps { get; private set; }
-		internal static List<KeyPressEventArgs> KeyPresses { get; private set; }
+		private static HashSet<Key> keyStates;
 
-		public static KeyModifiers Modifiers { get; private set; } = new KeyModifiers();
+		private static HashSet<Key> keyDowns;
+		private static HashSet<Key> keyUps;
+		private static List<KeyPressEventArgs> keyPresses;
+
+		public static KeyModifiers Modifiers { get; private set; }
 
 		public static string Text
 		{
@@ -25,35 +25,29 @@ namespace WireWorld
 
 		private static void InitializeKeyboard()
 		{
-			KeyDowns = new HashSet<Key>();
-			KeyUps = new HashSet<Key>();
-			KeyPresses = new List<KeyPressEventArgs>();
+			keyDowns = new HashSet<Key>();
+			keyUps = new HashSet<Key>();
+			keyStates = new HashSet<Key>();
+			keyPresses = new List<KeyPressEventArgs>();
 
 			window.KeyDown += Window_KeyDown;
 			window.KeyUp += Window_KeyUp;
 			window.KeyPress += Window_KeyPress;
-
-			previousKeyboardState = keyboardState = Keyboard.GetState();
 		}
 
 		public static bool IsKeyDown(Key key, bool ignoreWindowFocus = false)
 		{
-			return (ignoreWindowFocus || IsWindowFocused) && keyboardState.IsKeyDown(key);
+			return (ignoreWindowFocus || IsWindowFocused) && keyStates.Contains(key);
 		}
-
-		public static bool WasKeyDown(Key key, bool ignoreWindowFocus = false)
-		{
-			return (ignoreWindowFocus || IsWindowFocused) && previousKeyboardState.IsKeyDown(key);
-		} 
 
 		public static bool IsKeyPressed(Key key, bool ignoreWindowFocus = false)
 		{
-			return (ignoreWindowFocus || IsWindowFocused) && KeyDowns.Contains(key);
+			return (ignoreWindowFocus || IsWindowFocused) && keyDowns.Contains(key);
 		}
 
 		public static bool IsKeyReleased(Key key, bool ignoreWindowFocus = false)
 		{
-			return (ignoreWindowFocus || IsWindowFocused) && KeyUps.Contains(key);
+			return (ignoreWindowFocus || IsWindowFocused) && keyUps.Contains(key);
 		}
 
 		private static void Window_KeyPress(object sender, KeyPressEventArgs e)
@@ -63,45 +57,53 @@ namespace WireWorld
 				Text += e.KeyChar;
 			}
 
-			KeyPresses.Add(e);
-		}
-
-		private static void Window_KeyUp(object sender, KeyboardKeyEventArgs e)
-		{
-			KeyUps.Add(e.Key);
+			keyPresses.Add(e);
 		}
 
 		private static void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
 		{
-			KeyDowns.Add(e.Key);
+			keyDowns.Add(e.Key);
+			keyStates.Add(e.Key);
 		}
 
-        private static void BeginUpdateKeyboard()
+		private static void Window_KeyUp(object sender, KeyboardKeyEventArgs e)
 		{
-			previousKeyboardState = keyboardState;
-			keyboardState = Keyboard.GetState();
-			
-			Modifiers.IsAltDown = IsKeyDown(Key.LAlt) || IsKeyDown(Key.RAlt);
-			Modifiers.IsCtrlDown = IsKeyDown(Key.LControl) || IsKeyDown(Key.RControl);
-			Modifiers.IsWindowsDown = IsKeyDown(Key.LWin) || IsKeyDown(Key.RWin);
-			Modifiers.IsShiftDown = IsKeyDown(Key.LShift) || IsKeyDown(Key.RShift);
+			keyUps.Add(e.Key);
+			keyStates.Remove(e.Key);
+		}
+
+		private static void BeginUpdateKeyboard()
+		{
+			Modifiers = KeyModifiers.None;
+
+			if (IsKeyDown(Key.LControl) || IsKeyDown(Key.RControl))
+			{
+				Modifiers |= KeyModifiers.Control;
+			}
+
+			if (IsKeyDown(Key.LAlt) || IsKeyDown(Key.RAlt))
+			{
+				Modifiers |= KeyModifiers.Alt;
+			}
+
+			if (IsKeyDown(Key.LShift) || IsKeyDown(Key.RShift))
+			{
+				Modifiers |= KeyModifiers.Shift;
+			}
+
+			if (IsKeyDown(Key.LWin) || IsKeyDown(Key.RWin))
+			{
+				Modifiers |= KeyModifiers.Win;
+			}
 		}
 
 		private static void EndUpdateKeyboard()
 		{
-			KeyDowns.Clear();
-			KeyUps.Clear();
-			KeyPresses.Clear();
+			keyDowns.Clear();
+			keyUps.Clear();
+			keyPresses.Clear();
 
 			Text = "";
-		}
-		
-		public class KeyModifiers
-		{
-			public bool IsCtrlDown { get; internal set; }
-			public bool IsAltDown { get; internal set; }
-			public bool IsWindowsDown { get; internal set; }
-			public bool IsShiftDown { get; internal set; }
 		}
 	}
 }

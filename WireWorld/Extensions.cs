@@ -1,4 +1,5 @@
 ﻿using OpenTK;
+using OpenTK.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace WireWorld
 {
-    public static class MathExtensions
+    public static class Extensions
     {
         public static Vector2 GetTopLeft(this RectangleF rectangle)
         {
@@ -275,5 +276,11 @@ namespace WireWorld
         {
             return new Rectangle(0, 0, size.Width, size.Height);
         }
+
+		public static Color4 ChangeAlpha(this Color4 color, float alpha)
+		{
+			color.A = alpha;
+			return color;
+		}
     }
 }

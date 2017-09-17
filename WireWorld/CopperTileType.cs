@@ -9,13 +9,17 @@ namespace WireWorld
 {
 	public class CopperTileType : TileType
 	{
-		public override Color4 GetColor(Grid grid, Tile tile, int x, int y)
+		public static readonly Color4 Color = Color4.Orange;
+		public static readonly Color4 HeadColor = Color4.White;
+		public static readonly Color4 TailColor = Color4.Yellow;
+
+		public override Color4 GetColor(Tile tile, int x, int y)
 		{
 			switch (tile.Data)
 			{
-				case 1: return Color4.White;
-				case 2: return Color4.Yellow;
-				default: return Color4.Orange;
+				case 1: return HeadColor;
+				case 2: return TailColor;
+				default: return Color;
 			}
 		}
 
